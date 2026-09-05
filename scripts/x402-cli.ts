@@ -17,6 +17,7 @@ function inspect() {
   const config = loadConfig();
   console.log(JSON.stringify(
     {
+      service: 'researchpay-agent',
       networkName: config.networkName,
       network: config.network,
       usdcAssetId: config.usdcAssetId,
@@ -26,7 +27,7 @@ function inspect() {
       indexerUrl: config.indexerUrl,
       demoMode: config.demoMode,
       challengeMode: config.challengeMode,
-      protectedRoute: 'GET /api/wallet/:address',
+      protectedRoute: 'GET /api/research/:topic',
     },
     null,
     2,

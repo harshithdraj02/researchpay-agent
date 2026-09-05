@@ -5,8 +5,8 @@ import { paymentMiddleware, x402ResourceServer } from '@x402/hono';
 import { bazaarResourceServerExtension, declareDiscoveryExtension } from '@x402-avm/extensions';
 import type { RuntimeConfig } from '../config.js';
 
-export const WALLET_DESCRIPTION =
-  'Returns ALGO balance, ASA holdings, USDC balance, account status, and basic activity information for an Algorand address.';
+export const RESEARCH_DESCRIPTION =
+  'Generates structured AI research intelligence reports paid via x402 micro-USDC on Algorand TestNet.';
 
 export function createX402Middleware(config: RuntimeConfig) {
   const facilitator = new HTTPFacilitatorClient({ url: config.facilitatorUrl });
@@ -16,53 +16,75 @@ export function createX402Middleware(config: RuntimeConfig) {
 
   const discovery = declareDiscoveryExtension({
     input: {
-      address: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ',
+      topic: 'NVIDIA',
     },
     inputSchema: {
       properties: {
-        address: {
+        topic: {
           type: 'string',
-          description: 'A valid 58-character Algorand account address',
-          minLength: 58,
-          maxLength: 58,
+          description: 'Research topic or query parameter (e.g. NVIDIA, Algorand)',
+          minLength: 2,
+          maxLength: 100,
         },
       },
-      required: ['address'],
+      required: ['topic'],
     },
     output: {
       example: {
-        address: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ',
-        algoBalance: 127.35,
-        assetCount: 9,
-        usdcBalance: 24.5,
-        status: 'active',
-        summary: 'Active paid API holding 9 assets.',
-        createdAssets: 0,
-        appsLocalStateCount: 2,
-        minimumBalance: 0.3,
+        topic: 'NVIDIA',
+        query: 'nvidia',
+        timestamp: '2026-09-04T15:30:00.000Z',
+        status: 'completed',
+        report: {
+          title: 'Research Intelligence: NVIDIA',
+          executiveSummary: 'Automated AI research synthesis on NVIDIA.',
+          keyFindings: [
+            'x402 protocol enables sub-second HTTP 402 authorization and micropayment settlement for AI workloads.',
+          ],
+          sentiment: {
+            score: 0.95,
+            label: 'Bullish / Strong Growth',
+            marketConfidence: 'High',
+          },
+          dataPoints: {
+            chainNetwork: 'Algorand testnet',
+            usdcAssetId: 10458941,
+            settlementSpeedSec: 3.3,
+            protocolVersion: 'x402 v2 (AVM Exact Scheme)',
+          },
+          citations: ['https://docs.x402.org'],
+        },
+        settlement: {
+          verified: true,
+          paidWith: 'USDC (ASA 10458941)',
+          price: '$0.01',
+        },
       },
     },
   });
 
+  const routeConfig = {
+    accepts: [
+      {
+        scheme: 'exact',
+        price: config.price,
+        network: config.network,
+        payTo: config.payTo,
+        extra: {
+          asset: config.usdcAssetId,
+          ...(config.challengeMode ? { tag: 'x402-global-challenge' } : {}),
+        },
+      },
+    ],
+    description: RESEARCH_DESCRIPTION,
+    mimeType: 'application/json',
+    extensions: discovery,
+  };
+
   return paymentMiddleware(
     {
-      'GET /api/wallet/:address': {
-        accepts: [
-          {
-            scheme: 'exact',
-            price: config.price,
-            network: config.network,
-            payTo: config.payTo,
-            extra: {
-              asset: config.usdcAssetId,
-              ...(config.challengeMode ? { tag: 'x402-global-challenge' } : {}),
-            },
-          },
-        ],
-        description: WALLET_DESCRIPTION,
-        mimeType: 'application/json',
-        extensions: discovery,
-      },
+      'GET /api/research': routeConfig,
+      'GET /api/research/:topic': routeConfig,
     },
     server,
   );

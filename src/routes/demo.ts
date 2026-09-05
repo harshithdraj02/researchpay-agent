@@ -1,4 +1,3 @@
-import algosdk from 'algosdk';
 import type { Context } from 'hono';
 import type { RuntimeConfig } from '../config.js';
 import { createAvmPayingClient } from '../x402/client.js';
@@ -30,13 +29,13 @@ export function createDemoPurchaseHandler(config: RuntimeConfig) {
       );
     }
 
-    const body: { address?: string } = await c.req
-      .json<{ address?: string }>()
+    const body: { topic?: string } = await c.req
+      .json<{ topic?: string }>()
       .catch(() => ({}));
-    const address = body.address?.trim();
-    if (!address || !algosdk.isValidAddress(address)) {
+    const topic = body.topic?.trim() || 'NVIDIA';
+    if (topic.length < 2 || topic.length > 100) {
       return c.json(
-        { error: 'invalid_address', message: 'Enter a valid Algorand address.' },
+        { error: 'invalid_topic', message: 'Enter a valid topic between 2 and 100 characters.' },
         400,
       );
     }
@@ -52,13 +51,13 @@ export function createDemoPurchaseHandler(config: RuntimeConfig) {
       );
     }
 
-    const resourceUrl = `${new URL(c.req.url).origin}/api/wallet/${address}`;
+    const resourceUrl = `${new URL(c.req.url).origin}/api/research?topic=${encodeURIComponent(topic)}`;
     const challenge = await fetch(resourceUrl);
     if (challenge.status !== 402) {
       return c.json(
         {
           error: 'challenge_failed',
-          message: `Expected HTTP 402 from x402 Commerce Template, received ${challenge.status}.`,
+          message: `Expected HTTP 402 from ResearchPay Agent, received ${challenge.status}.`,
         },
         502,
       );
@@ -75,7 +74,7 @@ export function createDemoPurchaseHandler(config: RuntimeConfig) {
       );
     }
 
-    const settlement = payer.httpClient.getPaymentSettleResponse(name => response.headers.get(name));
+    const settlement = payer.httpClient.getPaymentSettleResponse((name: string) => response.headers.get(name));
     if (!settlement.success) {
       return c.json(
         { error: 'settlement_unconfirmed', message: 'No successful settlement receipt was returned.' },

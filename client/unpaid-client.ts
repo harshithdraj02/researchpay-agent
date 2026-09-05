@@ -3,7 +3,7 @@ import { readPaymentRequired, resourceUrl } from './lib.js';
 
 async function main() {
   const url = resourceUrl();
-  console.log('Requesting x402 Commerce Template without payment...');
+  console.log('Requesting ResearchPay Agent without payment...');
   console.log(`Resource URL: ${url}\n`);
 
   const response = await fetch(url);

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app.js';
 import { testConfig } from './config.js';
 
-describe('x402 Commerce Template HTTP API', () => {
+describe('ResearchPay Agent HTTP API', () => {
   beforeEach(() => {
     vi.stubGlobal(
       'fetch',
@@ -30,7 +30,7 @@ describe('x402 Commerce Template HTTP API', () => {
   it('keeps the health route public', async () => {
     const response = await createApp(testConfig).request('/health');
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ status: 'ok', service: 'x402-commerce-template' });
+    await expect(response.json()).resolves.toEqual({ status: 'ok', service: 'researchpay-agent' });
   });
 
   it('serves the demo dashboard and browser assets', async () => {
@@ -42,7 +42,7 @@ describe('x402 Commerce Template HTTP API', () => {
     ]);
 
     expect(page.status).toBe(200);
-    expect(await page.text()).toContain('Ask agent to buy');
+    expect(await page.text()).toContain('Research');
     expect(styles.headers.get('content-type')).toContain('text/css');
     expect(script.headers.get('content-type')).toContain('text/javascript');
   });
@@ -51,22 +51,22 @@ describe('x402 Commerce Template HTTP API', () => {
     const response = await createApp(testConfig).request('/demo/purchase', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ address: testConfig.defaultWalletAddress }),
+      body: JSON.stringify({ topic: 'algorand-agentic-commerce' }),
     });
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toMatchObject({ error: 'demo_disabled' });
   });
 
-  it('rejects an invalid address before asking for payment', async () => {
-    const response = await createApp(testConfig).request('/api/wallet/not-an-address');
+  it('rejects an invalid topic before asking for payment', async () => {
+    const response = await createApp(testConfig).request('/api/research/a');
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({ error: 'invalid_address' });
+    await expect(response.json()).resolves.toMatchObject({ error: 'invalid_topic' });
   });
 
   it('returns a real x402 challenge for an unpaid valid request', async () => {
     const indexerFetch = vi.fn<typeof fetch>();
     const response = await createApp(testConfig, { fetchImpl: indexerFetch }).request(
-      '/api/wallet/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ',
+      '/api/research/algorand-agentic-commerce',
     );
 
     expect(response.status).toBe(402);
@@ -77,7 +77,7 @@ describe('x402 Commerce Template HTTP API', () => {
   it('adds the Challenge tag only when challenge mode is enabled', async () => {
     const app = createApp({ ...testConfig, challengeMode: true });
     const response = await app.request(
-      '/api/wallet/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ',
+      '/api/research/algorand-agentic-commerce',
     );
     const encoded = response.headers.get('payment-required');
     expect(encoded).toBeTruthy();

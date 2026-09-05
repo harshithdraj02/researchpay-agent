@@ -1,132 +1,171 @@
-# x402 Commerce Template
+# 🔬 ResearchPay Agent
 
-This is a starter kit for building paid HTTP APIs that autonomous agents can buy with x402 on Algorand.
+> **Autonomous AI Research API with x402 Micro-USDC Payments on Algorand**
 
-It includes a working default paid route, x402 server middleware, paying clients, a local demo agent, Bazaar discovery metadata, a browser payment-flow demo, AI-agent instructions, resource docs, CLI helpers, a sandbox, a payment-flow simulator, SDK helpers, and optional Algorand smart contract templates.
+[![Algorand TestNet](https://img.shields.io/badge/Algorand-TestNet-000000?style=for-the-badge&logo=algorand&logoColor=white)](https://testnet.explorer.perawallet.app/)
+[![x402 Protocol](https://img.shields.io/badge/x402-v2_AVM_Exact-6366F1?style=for-the-badge)](https://docs.x402.org)
+[![USDC ASA](https://img.shields.io/badge/USDC_ASA-10458941-2775CA?style=for-the-badge&logo=usd-coin&logoColor=white)](https://faucet.circle.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.style=for-the-badge)](LICENSE)
 
+**ResearchPay Agent** is an agentic commerce service built on Algorand. It enables autonomous AI agents to purchase real-time, specialized AI research intelligence reports on a pay-per-query basis using the **x402 open HTTP micropayment protocol** and **Algorand TestNet USDC**.
 
-## Start Here
+---
 
-Fork this repository to your GitHub account (recommended for customization and contributions), or clone it directly if you're just trying it locally.
+## ⚡ Problem & Vision
 
-```bash
-git clone <repo-url>
-cd x402-commerce-template
+Traditional API access requires human account creation, credit card subscriptions, and centralized API keys—creating friction for autonomous AI agents. 
+
+**ResearchPay Agent** removes all human friction by enabling **machine-native payment rails**:
+1. Agents discover the endpoint and receive an `HTTP 402 Payment Required` challenge.
+2. Agents evaluate spending policies before signing a **$0.01 USDC** transaction on Algorand.
+3. The **GoPlausible facilitator** verifies and settles the payment on-chain in 3.3 seconds.
+4. The server delivers live-synthesized AI research with real-time web citations and verifiable settlement receipts.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Agent as 🤖 Autonomous Agent / Buyer Wallet
+    participant API as 🛡️ ResearchPay API (/api/research)
+    participant Facilitator as ⚡ GoPlausible Facilitator
+    participant Chain as ⛓️ Algorand TestNet (USDC ASA 10458941)
+
+    Agent->>API: GET /api/research?topic=NVIDIA
+    API-->>Agent: HTTP 402 Payment Required (x402 Header: $0.01 USDC)
+    Note over Agent: Enforce Spending Policy ($0.10 max) & Sign Payment Tx
+    Agent->>API: GET /api/research?topic=NVIDIA (with Payment Signature)
+    API->>Facilitator: Verify & Settle Payment Payload
+    Facilitator->>Chain: Submit AVM Exact Scheme Tx
+    Chain-->>Facilitator: Block Settlement Confirmed (3.3s)
+    Facilitator-->>API: Settlement Receipt Header
+    API-->>Agent: HTTP 200 OK + Unlocked AI Research Report + Tx Link
 ```
 
-Then install dependencies, configure your environment, and start the development server:
+---
+
+## ✨ Key Features
+
+- 🔍 **Real-Time Knowledge Engine**: Dynamically fetches and synthesizes live intelligence from Wikipedia Knowledge REST API and DuckDuckGo for any requested topic (`NVIDIA`, `Quantum computing`, `Algorand`, `Solana`, `AI Agents`, etc.).
+- 🛡️ **x402 Protocol Compliant**: Full implementation of the x402 HTTP standard with `HTTP 402` challenges, base64url header parsing, and receipt verification.
+- 💰 **Machine-Native Micro-USDC Pricing**: Fixed **$0.01 USDC** price per research request on Algorand TestNet (ASA `10458941`).
+- 🔐 **Spending Policy Enforcement**: Built-in client spending cap ($0.10 max budget) preventing runaway agent spending.
+- 🎨 **Interactive Web Dashboard**: Glassmorphism UI featuring live 5-step timeline tracking, budget cards, and direct links to Pera Explorer transaction receipts.
+- 🔒 **Zero-Trust Wallet Security**: Private keys (`CLIENT_MNEMONIC`) are kept strictly local in `.env`. Server receiver requires only a public `PAY_TO_ADDRESS`.
+
+---
+
+## 🚀 Quickstart Guide
+
+### 1. Prerequisites
+
+- **Node.js**: v20 or higher
+- **pnpm** (or `npm`)
+- **Algorand TestNet Wallets**:
+  - **Buyer Wallet**: Needs TestNet ALGO for fees + TestNet USDC (ASA `10458941`).
+  - **Receiver Wallet**: Needs public address opted into USDC ASA `10458941`.
+
+### 2. Installation
 
 ```bash
+git clone https://github.com/SomehowLiving/x402-commerce-template.git researchpay-agent
+cd researchpay-agent
 pnpm install
-cp .env.example .env
-pnpm dev
 ```
 
-Then fill in `.env`:
+### 3. Environment Setup
+
+Copy `.env.example` to `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Configure your local `.env`:
 
 ```env
+PORT=3000
+API_BASE_URL=http://localhost:3000
 ALGORAND_NETWORK=testnet
-PAY_TO_ADDRESS=YOUR_RECEIVER_TESTNET_ADDRESS
-CLIENT_MNEMONIC="your disposable payer wallet 25-word mnemonic"
-WALLET_ADDRESS=ANY_VALID_TESTNET_ADDRESS_TO_INSPECT
+
+# RECEIVER / SERVICE WALLET (Public Address Only)
+PAY_TO_ADDRESS=WT5667IIQY3ONNBA6BKUGVYGRM52GNILV453KJLE4NOA7YAD6PCW6IJBK4
+
+# BUYER / AGENT WALLET
+WALLET_ADDRESS=NZJKOPEAQ5OV2QMYXMOECLMMG2WOQVXDQ2S5IPTWKXQ54GOMWOXYUSJAMI
+
+# BUYER SECRET CREDENTIAL (Stored safely local only)
+CLIENT_MNEMONIC="your 25 word testnet buyer mnemonic phrase"
+
+FACILITATOR_URL=https://facilitator.goplausible.xyz
+PRICE_USDC=$0.01
 DEMO_MODE=true
 ```
 
-Open `http://localhost:3000` to run the visual demo.
+---
 
-## Participant Flow
+## 🏃 Running the Application
 
-1. Fill `PROJECT_BRIEF.md` with the agentic commerce idea.
-2. Ask an AI coding agent to read `AGENTS.md`, `skills.md`, and the project brief.
-3. Configure `.env`.
-4. Run `pnpm dev`.
-5. Test unpaid and paid flows.
-6. Customize the paid resource, Bazaar metadata, clients, dashboard, and tests.
-
-The default implementation sells an Algorand wallet data response at `GET /api/wallet/:address`. It is intentionally simple so participants can verify x402 first, then replace the paid resource with their own service.
-
-## What x402 Payment Needs
-
-| Piece | Where |
-| --- | --- |
-| Public paid route | `src/app.ts` and `src/routes/wallet.ts` |
-| Payment middleware | `src/x402/config.ts` |
-| Facilitator | `FACILITATOR_URL`, defaults to GoPlausible |
-| Receiver wallet | `PAY_TO_ADDRESS` |
-| Payment asset | USDC ASA from `@x402/avm` |
-| Payer signer | `CLIENT_MNEMONIC` for local TestNet clients only |
-| Buyer client | `client/paid-client.ts` and `client/agent-client.ts` |
-| Bazaar metadata | `src/x402/config.ts` |
-| Visual simulator | `pnpm simulate` and browser dashboard |
-
-## Included Tools
+### Start Development Server & UI
 
 ```bash
-pnpm build
-pnpm test
-pnpm smoke
-pnpm simulate
-pnpm x402 inspect
-pnpm x402 checklist
-pnpm sandbox
-AGENT_SANDBOX_PAY=true pnpm sandbox
+pnpm dev
+```
+Open **`http://localhost:3000`** in your browser to interact with the ResearchPay Agent dashboard.
+
+### Execute Unpaid Client Request (HTTP 402 Challenge)
+
+```bash
 pnpm client:unpaid
+```
+
+### Execute Paid Client Request (Real On-Chain Settlement)
+
+```bash
 pnpm client:paid
-pnpm client:agent
 ```
 
-## Folder Map
+### Run Full Payment Simulator
 
-```text
-.
-├── AGENTS.md
-├── skills.md
-├── PROJECT_BRIEF.md
-├── client/
-├── contracts/templates/
-├── docs/resources/
-├── sdk/
-├── scripts/
-├── src/
-└── test/
+```bash
+pnpm simulate
 ```
 
-## Add Your Own Paid Resource
+---
 
-Ask your AI agent:
+## 🧪 Testing & Verification
 
-```text
-Read AGENTS.md, skills.md, and PROJECT_BRIEF.md. Build the paid x402 service described in the brief. Keep the default x402 lifecycle intact, update Bazaar metadata, update the browser demo, and verify with build/tests/smoke/simulator.
+Run the full suite of unit tests, smoke tests, and x402 protocol checks:
+
+```bash
+# Unit Tests
+pnpm test
+
+# Smoke Test
+pnpm smoke
+
+# Build Verification
+pnpm build
+
+# x402 Protocol Inspection
+pnpm x402 inspect
 ```
 
-The agent should change:
+---
 
-- `src/routes/*` for business logic.
-- `src/app.ts` for route registration and pre-payment validation.
-- `src/x402/config.ts` for payment terms and Bazaar metadata.
-- `client/lib.ts` and clients for the buyer URL.
-- `src/web/*` for the visual demo.
-- `test/*` for route behavior.
+## 🔗 Useful Links & Resources
 
-## Resources
+- **Algorand TestNet Faucet**: [lora.algokit.io/testnet/fund](https://lora.algokit.io/testnet/fund)
+- **Circle USDC TestNet Faucet**: [faucet.circle.com](https://faucet.circle.com)
+- **Algorand Pera Explorer**: [testnet.explorer.perawallet.app](https://testnet.explorer.perawallet.app/)
+- **GoPlausible Facilitator**: [facilitator.goplausible.xyz](https://facilitator.goplausible.xyz)
+- **x402 Protocol Docs**: [docs.x402.org](https://docs.x402.org)
 
-- `docs/resources/X402_PRIMER.md`
-- `docs/resources/ALGORAND_PAYMENT_REQUIREMENTS.md`
-- `docs/resources/GOPLAUSIBLE_FACILITATOR.md`
-- `docs/resources/BAZAAR_DISCOVERY.md`
-- `docs/resources/AGENTIC_COMMERCE_PATTERNS.md`
-- `docs/resources/TROUBLESHOOTING_PLAYBOOK.md`
-- `docs/resources/IMPLEMENTATION_MAP.md`
-- `docs/resources/TECH_STACK.md`
-- x402 docs: https://docs.x402.org/introduction
-- Algorand x402 guide: https://dev.algorand.co/resources/x402-on-algorand/
-- GoPlausible resource catalog: https://facilitator.goplausible.xyz/dashboard/leaderboards?cat=resources
+---
 
-## Safety
+## 📄 License
 
-- Do not commit `.env`.
-- Do not log mnemonics.
-- Use disposable TestNet wallets locally.
-- Keep payer and receiver as different accounts.
-- Keep `DEMO_MODE=false` outside local TestNet demos.
-- Reject invalid input before payment middleware.
+This project is licensed under the [MIT License](LICENSE).

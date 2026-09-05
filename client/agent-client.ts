@@ -8,7 +8,6 @@ import {
 } from './lib.js';
 
 async function discoverPaidResource(facilitatorUrl: string): Promise<DiscoveryResource | undefined> {
-  // The AVM extension package currently aliases its core dependency; the public client API is compatible.
   const facilitator = new HTTPFacilitatorClient({ url: facilitatorUrl });
   const bazaar = withBazaar(
     facilitator as unknown as Parameters<typeof withBazaar>[0],
@@ -18,7 +17,7 @@ async function discoverPaidResource(facilitatorUrl: string): Promise<DiscoveryRe
     const page = await bazaar.extensions.discovery.listResources({ type: 'http', limit, offset });
     const match = page.items.find(item => {
       const searchable = `${item.resource} ${JSON.stringify(item.metadata ?? {})}`.toLowerCase();
-      return searchable.includes('x402-commerce-template') || searchable.includes('paid resource');
+      return searchable.includes('researchpay-agent') || searchable.includes('research intelligence') || searchable.includes('research');
     });
     if (match || offset + page.items.length >= page.pagination.total) return match;
   }
@@ -30,11 +29,11 @@ async function main() {
   let url: string;
 
   if (mode === 'bazaar') {
-    console.log('Agent: searching the GoPlausible Bazaar for Algorand paid resource...');
+    console.log('Agent: searching the GoPlausible Bazaar for ResearchPay Agent paid resource...');
     const discovered = await discoverPaidResource(facilitatorUrl);
     if (!discovered) {
       throw new Error(
-        'x402 Commerce Template is not currently indexed in Bazaar. A public endpoint and a successful settlement are required before discovery can be claimed.',
+        'ResearchPay Agent is not currently indexed in Bazaar. A public endpoint and a successful settlement are required before discovery can be claimed.',
       );
     }
     url = discovered.resource;
@@ -49,7 +48,7 @@ async function main() {
   }
 
   const payer = createPayingClient();
-  console.log('Agent: purchasing the resource with x402...');
+  console.log('Agent: purchasing research report with x402...');
   const response = await payer.fetchWithPayment(url);
   if (!response.ok) throw new Error(`Purchase failed with HTTP ${response.status}: ${await response.text()}`);
 
@@ -57,7 +56,7 @@ async function main() {
   if (!settlement.success) throw new Error('The response arrived without a confirmed settlement receipt.');
 
   console.log(`Agent: settlement confirmed in transaction ${settlement.transaction}`);
-  console.log('Agent: consuming paid resource...');
+  console.log('Agent: consuming paid research report...');
   console.log(JSON.stringify(await response.json(), null, 2));
 }
 

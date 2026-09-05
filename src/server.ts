@@ -8,12 +8,12 @@ try {
   const app = createApp(config);
 
   serve({ fetch: app.fetch, port: config.port }, info => {
-    console.log(`x402 Commerce Template running on http://localhost:${info.port}`);
+    console.log(`ResearchPay Agent running on http://localhost:${info.port}`);
     console.log('Health endpoint: /health');
-    console.log('Protected endpoint: /api/wallet/:address');
+    console.log('Protected endpoint: /api/research?topic=NVIDIA');
     console.log(`Payment network: Algorand ${config.networkName}`);
   });
 } catch (error) {
-  console.error(`x402 Commerce Template could not start: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`ResearchPay Agent could not start: ${error instanceof Error ? error.message : String(error)}`);
   process.exit(1);
 }

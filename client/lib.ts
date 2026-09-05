@@ -1,16 +1,14 @@
-import algosdk from 'algosdk';
 import { ALGORAND_MAINNET_CAIP2, ALGORAND_TESTNET_CAIP2 } from '@x402/avm';
 import { createAvmPayingClient } from '../src/x402/client.js';
 
 export type ClientNetwork = 'testnet' | 'mainnet';
 
-export function resourceUrl(): string {
+export const MAX_SPENDING_CAP_USDC = 0.10; // Hard budget policy cap per request
+
+export function resourceUrl(topic?: string): string {
   const baseUrl = (process.env.API_BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
-  const address = process.env.WALLET_ADDRESS ?? process.env.PAY_TO_ADDRESS;
-  if (!address || !algosdk.isValidAddress(address)) {
-    throw new Error('Set WALLET_ADDRESS (or PAY_TO_ADDRESS) to a valid Algorand address in .env.');
-  }
-  return `${baseUrl}/api/wallet/${address}`;
+  const researchTopic = topic ?? process.env.RESEARCH_TOPIC ?? 'NVIDIA';
+  return `${baseUrl}/api/research?topic=${encodeURIComponent(researchTopic)}`;
 }
 
 export function clientNetwork(): { name: ClientNetwork; caip2: `${string}:${string}` } {
@@ -24,7 +22,7 @@ export function createPayingClient() {
   const mnemonic = process.env.CLIENT_MNEMONIC?.trim();
   if (!mnemonic) {
     throw new Error(
-      'CLIENT_MNEMONIC is missing. Use only a disposable demo wallet, funded with ALGO and opted into USDC.',
+      'CLIENT_MNEMONIC is missing in local .env. Add your 25-word secret seed phrase for Wallet 1 in .env.',
     );
   }
 
@@ -41,6 +39,7 @@ export function createPayingClient() {
 
 export interface PaymentRequiredSummary {
   price: string;
+  amount: number;
   network: string;
   asset: string;
   description: string;
@@ -63,10 +62,12 @@ export function readPaymentRequired(response: Response): PaymentRequiredSummary 
     const requirement = parsed.accepts?.[0];
     const decimals = requirement?.extra?.decimals ?? 6;
     const rawAmount = requirement?.amount ? Number(requirement.amount) : Number.NaN;
-    const price = Number.isFinite(rawAmount) ? `$${rawAmount / 10 ** decimals}` : 'See payment requirements';
+    const numericAmount = Number.isFinite(rawAmount) ? rawAmount / 10 ** decimals : 0;
+    const price = Number.isFinite(rawAmount) ? `$${numericAmount}` : 'See payment requirements';
 
     return {
       price,
+      amount: numericAmount,
       network: requirement?.network ?? 'unknown',
       asset: String(requirement?.asset ?? requirement?.extra?.asset ?? requirement?.extra?.name ?? 'unknown'),
       description: parsed.resource?.description ?? 'Paid x402 resource',
@@ -76,17 +77,26 @@ export function readPaymentRequired(response: Response): PaymentRequiredSummary 
   }
 }
 
+export function enforceSpendingPolicy(requirement: PaymentRequiredSummary | null) {
+  if (!requirement) return;
+  if (requirement.amount > MAX_SPENDING_CAP_USDC) {
+    throw new Error(
+      `Spending Policy Error: Request price (${requirement.price}) exceeds max allowable spending cap of $${MAX_SPENDING_CAP_USDC} USDC.`,
+    );
+  }
+}
+
 export function explainPaymentError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   const lower = message.toLowerCase();
   if (lower.includes('opt') && lower.includes('asset')) {
-    return `${message}\nThe payer may not be opted into the configured USDC asset.`;
+    return `${message}\nThe payer may not be opted into the configured USDC asset (10458941).`;
   }
   if (lower.includes('insufficient') || lower.includes('overspend')) {
-    return `${message}\nFund the payer with enough ALGO for fees/minimum balance and enough USDC for the request.`;
+    return `${message}\nFund the payer with enough ALGO for fees/minimum balance and enough TestNet USDC for the request.`;
   }
   if (lower.includes('fetch') || lower.includes('network')) {
-    return `${message}\nCheck that x402 Commerce Template and the GoPlausible facilitator are reachable.`;
+    return `${message}\nCheck that ResearchPay Agent server and the GoPlausible facilitator are reachable.`;
   }
   return message;
 }
